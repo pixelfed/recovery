@@ -1,0 +1,11 @@
+@import 'variables';
+@import 'bootstrap/scss/bootstrap';
+
+#app {
+    width: 100%;
+    height: 100vh;
+    background: url('/resources/img/bg.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: none;
+}
