@@ -28,6 +28,7 @@
                                     class="form-control form-control-lg"
                                     id="username"
                                     placeholder="Enter your username here"
+                                    autofocus
                                     v-model="username">
                             </div>
 
