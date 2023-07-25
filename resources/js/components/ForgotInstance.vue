@@ -20,9 +20,7 @@
                     <div v-else-if="tab === 'search'" class="card">
                         <div class="card-body">
                             <div class="mb-3">
-                                <Transition>
-                                    <label v-if="!username || !username.length" for="username" class="form-label">Enter your username</label>
-                                </Transition>
+                                <label for="username" class="form-label">Enter your username</label>
                                 <input
                                     type="text"
                                     class="form-control form-control-lg"
@@ -30,10 +28,30 @@
                                     placeholder="Enter your username here"
                                     autofocus
                                     v-model="username">
+
+                                <p class="help-text small text-muted mt-1">Enter only your username, without @ or the full url</p>
                             </div>
 
                             <div class="d-flex justify-content-end">
-                                <button class="btn btn-primary fw-bold" @click="handleSubmit">Search</button>
+                                <button class="btn btn-primary fw-bold" @click="proceedCaptcha" :disabled="!username || !username.length">Next</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="tab === 'captcha'" class="card">
+                        <div class="card-body">
+                            <h4 class="fw-bold text-center">Captcha</h4>
+                            <hr>
+
+                            <div class="mb-3 d-flex justify-content-center">
+                                <vue-hcaptcha
+                                    :sitekey="hkey"
+                                    @verify="onVerifyCaptcha"
+                                />
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-primary fw-bold" @click="handleSubmit" :disabled="!canSubmit">Search</button>
                             </div>
                         </div>
                     </div>
@@ -82,20 +100,27 @@
 
                     <div v-else-if="tab === 'ratelimit'" class="card">
                         <div class="card-body">
-                            <h4 class="fw-bold">Oops! You've been rate limited.</h4>
+                            <h4 class="fw-bold text-center">Oops! You've been rate limited.</h4>
                             <hr>
-                            <p class="mb-0 lead">Please try again in a minute.</p>
+                            <p class="mb-2 lead text-center">Please try again in a minute.</p>
+                            <p class="mb-0 text-center small text-muted">We know this is annoying, but this helps protect against abuse. A button will appear below once you can retry again!</p>
                         </div>
                     </div>
 
-                    <p v-if="showRetry" class="text-center">
-                        <a href="#" class="text-white" @click.prevent="handleReset()">Lookup another username</a>
-                    </p>
+                    <transition>
+                        <p v-if="showRetry" class="text-center w-100 d-flex">
+                            <a href="#" class="btn btn-dark flex-grow-1 fw-bold" @click.prevent="handleReset()">Lookup another username</a>
+                        </p>
+                    </transition>
                 </div>
             </div>
         </div>
     </div>
 </template>
+
+<script setup>
+  import VueHcaptcha from '@hcaptcha/vue3-hcaptcha';
+</script>
 
 <script>
     export default {
@@ -103,10 +128,13 @@
             return {
                 username: undefined,
                 tab: 'loading',
+                hkey: import.meta.env.VITE_RECOVERY_CAPTCHA_SITEKEY,
                 token: undefined,
+                canSubmit: false,
                 results: [],
                 errors: [],
-                showRetry: false
+                showRetry: false,
+                eKey: undefined,
             }
         },
 
@@ -136,13 +164,21 @@
                     this.tab = 'search';
                 })
                 .catch(err => {
-                    this.$router.push('/');
+                    if(err.response.status === 429) {
+                        this.showRetry = false;
+                        this.tab = 'ratelimit';
+                        setTimeout(() => {
+                            this.showRetry = true;
+                        }, 60000);
+                    } else {
+                        this.$router.push('/');
+                    }
                 })
             },
 
             handleSubmit() {
                 this.showRetry = false;
-                axios.post('/api/v1/lookup', { username: this.username, token: this.token })
+                axios.post('/api/v1/lookup', { username: this.username, token: this.token, ekey: this.eKey })
                 .then(res => {
                     this.results = res.data;
                     this.tab = 'results';
@@ -165,6 +201,16 @@
                             }, 60000);
                         break;
 
+                        case 409:
+                            this.tab = 'error';
+                            if(err.response.data.message) {
+                                this.errors = [[err.response.data.message]];
+                            }
+                            setTimeout(() => {
+                                this.showRetry = true;
+                            }, 60000);
+                        break;
+
                         default:
                             this.tab = 'error';
                             setTimeout(() => {
@@ -178,7 +224,18 @@
             handleReset() {
                 this.username = undefined;
                 this.results = [];
-                this.tab = 'search';
+                this.canSubmit = false;
+                this.validateToken();
+            },
+
+            proceedCaptcha() {
+                this.canSubmit = false;
+                this.tab = 'captcha';
+            },
+
+            onVerifyCaptcha(token, eKey) {
+                this.canSubmit = true;
+                this.eKey = token;
             }
         }
     }
