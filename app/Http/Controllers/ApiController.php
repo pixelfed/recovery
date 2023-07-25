@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Profile;
 use App\Models\Instance;
+use App\Services\CaptchaService;
+use App\Services\RateLimitService;
 
 class ApiController extends Controller
 {
@@ -16,6 +18,8 @@ class ApiController extends Controller
 
         abort_unless(hash_equals(config('config.token'), $request->token), 422);
 
+        abort_unless(RateLimitService::check($request->ip()) <= config('config.rate_limit.attempts'), 429);
+
         return [200];
     }
 
@@ -24,9 +28,14 @@ class ApiController extends Controller
         $this->validate($request, [
             'username' => 'required|min:3|max:15',
             'token' => 'required',
+            'ekey' => 'required|min:5'
         ]);
 
         abort_unless(hash_equals(config('config.token'), $request->token), 403);
+        abort_unless(RateLimitService::check($request->ip()) <= config('config.rate_limit.attempts'), 429);
+        abort_unless(CaptchaService::verifyToken($request->ekey), 409, 'Invalid captcha result');
+
+        RateLimitService::increment($request->ip());
 
         $username = $request->input('username');
 
