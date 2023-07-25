@@ -10,7 +10,7 @@ return [
     ],
 
     'rate_limit' => [
-        'ttl' => env('RECOVERY_RATELIMIT_TTL', 14400),
+        'ttl' => env('RECOVERY_RATELIMIT_TTL', 86400),
         'attempts' => env('RECOVERY_RATELIMIT_ATTEMPTS', 10),
     ],
 ];
