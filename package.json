@@ -16,6 +16,7 @@
         "vue": "^3.2.37"
     },
     "dependencies": {
+        "@hcaptcha/vue3-hcaptcha": "^1.2.1",
         "vue-router": "^4.2.4"
     }
 }
