@@ -65,7 +65,7 @@ class ApiController extends Controller
                 }
             })
             ->filter(function($item) {
-                if(!in_array($item['domain'], ['pixelfed.social', 'pixelfed.art', 'mastodon.social'])) {
+                if(!in_array($item['domain'], ['pixelfed.social', 'pixelfed.art'])) {
                     return Instance::whereDomain($item['domain'])->whereSoftware('pixelfed')->exists();
                 }
                 return true;
