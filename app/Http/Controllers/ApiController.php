@@ -45,7 +45,7 @@ class ApiController extends Controller
 
         $profiles = Profile::where('username', 'like', $username . '%')
             ->orWhere('username', 'like', '@' . $username . '%')
-            ->take(10)
+            ->take(100)
             ->get()
             ->pluck('username')
             ->map(function($wf) {
@@ -65,7 +65,7 @@ class ApiController extends Controller
                 }
             })
             ->filter(function($item) {
-                if($item['domain'] != 'pixelfed.social') {
+                if(!in_array($item['domain'], ['pixelfed.social', 'pixelfed.art', 'mastodon.social'])) {
                     return Instance::whereDomain($item['domain'])->whereSoftware('pixelfed')->exists();
                 }
                 return true;
