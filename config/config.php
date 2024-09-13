@@ -2,6 +2,7 @@
 
 return [
     'token' => env('RECOVERY_APP_TOKEN', ''),
+    'token_temp' => env('RECOVERY_APP_TOKEN_TEMP', '85c50dfd-9511-4f86-a218-f0da01e07452'),
 
     'captcha' => [
         'enabled' => env('RECOVERY_CAPTCHA_ENABLED', false),

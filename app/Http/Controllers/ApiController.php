@@ -16,7 +16,8 @@ class ApiController extends Controller
             'token' => 'required'
         ]);
 
-        abort_unless(hash_equals(config('config.token'), $request->token), 422);
+        abort_unless(hash_equals(config('config.token'), $request->token) || hash_equals(config('config.token_temp'), $request->token), 422);
+
 
         abort_unless(RateLimitService::check($request->ip()) <= config('config.rate_limit.attempts'), 429);
 
@@ -31,7 +32,7 @@ class ApiController extends Controller
             'ekey' => 'required|min:5'
         ]);
 
-        abort_unless(hash_equals(config('config.token'), $request->token), 403);
+        abort_unless(hash_equals(config('config.token'), $request->token) || hash_equals(config('config.token_temp'), $request->token), 403);
         abort_unless(RateLimitService::check($request->ip()) <= config('config.rate_limit.attempts'), 429);
         abort_unless(CaptchaService::verifyToken($request->ekey), 409, 'Invalid captcha result');
 
